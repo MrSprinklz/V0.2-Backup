@@ -1,0 +1,42 @@
+./kiauh/kiauh.sh
+
+# SKR Mini E3 V3 Update
+sudo service klipper stop
+cd ~/klipper
+git pull
+make clean
+make menuconfig
+# Enable extra options, STM32G0B1, Do Not Build, 8KiB, 8MHz, USB on PA11/PA12
+make
+./scripts/flash-sdcard.sh /dev/serial/by-id/usb-Klipper_stm32g0b1xx_400024001650344D30363620-if00 btt-skr-mini-e3-v3
+sudo service klipper start
+
+## EBB36 Update Katapult
+sudo service klipper stop
+cd ~/katapult
+git pull
+make clean
+make menuconfig
+## STM32G0B1, Build 8kib, 8MHz, Can on PB0/PB1, 8KiB, 1,000,000 speed, check support double click, check LED, Pin PA13
+make
+python3 ~/katapult/scripts/flash_can.py -i can0 -u a065fa174934 -r 
+## Look for bootloader request can update success
+python3 ~/katapult/scripts/flash_can.py -q 
+## Look for "Detected UUID: a065fa174934, Application: Katapult"
+python3 ~/katapult/scripts/flash_can.py -i can0 -u a065fa174934 -f ~/katapult/out/deployer.bin
+
+## EBB36 Update Klipper
+sudo service klipper stop
+cd ~/klipper
+git pull
+make clean
+make menuconfig
+## STM32G0B1, 8MHz, Can on PB0/PB1, 8KiB, 1,000,000 speed
+make
+python3 ~/katapult/scripts/flash_can.py -i can0 -u a065fa174934 -r 
+## Look for bootloader request can update success
+python3 ~/katapult/scripts/flash_can.py -q 
+## Look for "Detected UUID: a065fa174934, Application: Katapult"
+python3 ~/katapult/scripts/flash_can.py -i can0 -u a065fa174934 -f ~/klipper/out/klipper.bin
+python3 ~/katapult/scripts/flash_can.py -i can0 -q 
+## Look for "Detected UUID: a065fa174934, Application: Klipper"
